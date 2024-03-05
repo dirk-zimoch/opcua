@@ -1265,10 +1265,10 @@ private:
     ptrdiff_t timesrc;
 
     const UA_DataType *memberType = NULL;    /**< type of this element */
-    UA_Boolean isArray = false;              /**< is this element an array? */
+    UA_Boolean isArray = false;              /**< is this element an array or a matrix? */
     UA_Boolean isOptional = false;           /**< is this element optional? */
     size_t offset = 0;                       /**< data offset of this element in parent structure */
-    UA_UInt32 index = 0;                     /**< element index (for unions) */
+    ptrdiff_t index = 0;                     /**< index for unions and array elements and slices */
     bool mapped;                             /**< child name to index mapping done */
     UpdateQueue<UpdateOpen62541> incomingQueue;  /**< queue of incoming values */
     UA_Variant incomingData;                 /**< cache of latest incoming value */

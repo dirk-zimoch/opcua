@@ -333,6 +333,16 @@ parseLink (dbCommon *prec, const DBEntry &ent)
         sep = linkstr.find_first_not_of("; \t", send);
     }
 
+    // split array index off element names
+    for (auto e = pinfo->elementPath.begin(); e != pinfo->elementPath.end(); e++) {
+        size_t indexStart = e->find('[', 1);
+        if (indexStart == std::string::npos)
+            continue;
+        pinfo->elementPath.insert(e, e->substr(0, indexStart));
+        e->erase(0, indexStart);
+        e--;
+    }
+
     if (!pinfo->clientQueueSize) {
         pinfo->clientQueueSize = static_cast<epicsUInt32>(ceil(abs(opcua_ClientQueueSizeFactor) * pinfo->queueSize));
         epicsUInt32 mini = static_cast<epicsUInt32>(abs(opcua_MinimumClientQueueSize));
