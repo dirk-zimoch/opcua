@@ -166,7 +166,6 @@ DataElementUaSdk::setIncomingData(const UaVariant &value,
                             for (int i = 0; i < definition.childrenCount(); i++) {
                                 if (*timefrom == definition.child(i).name().toUtf8()) {
                                     timesrc = i;
-                                    pitem->tsData = epicsTimeFromUaVariant(genericValue.value(i));
                                 }
                             }
                             OpcUa_BuiltInType t = genericValue.value(timesrc).type();
@@ -191,7 +190,6 @@ DataElementUaSdk::setIncomingData(const UaVariant &value,
                                     elementMap.insert({i, it});
                                     delete pelem->enumChoices;
                                     pelem->enumChoices = pitem->session->getEnumChoices(definition.child(i).enumDefinition());
-                                    pelem->setIncomingData(genericValue.value(i), reason);
                                 }
                             }
                         }
@@ -200,16 +198,35 @@ DataElementUaSdk::setIncomingData(const UaVariant &value,
                                       << " child elements mapped to a "
                                       << "structure of " << definition.childrenCount() << " elements" << std::endl;
                         mapped = true;
-                    } else {
-                        if (timefrom) {
-                            if (timesrc >= 0)
-                                pitem->tsData = epicsTimeFromUaVariant(genericValue.value(timesrc));
-                            else
-                                pitem->tsData = pitem->tsSource;
-                        }
-                        for (auto &it : elementMap) {
-                            auto pelem = it.second.lock();
-                            pelem->setIncomingData(genericValue.value(it.first), reason);
+                    }
+
+                    if (timesrc >= 0)
+                        pitem->tsData = epicsTimeFromUaVariant(genericValue.value(timesrc));
+                    else
+                        pitem->tsData = pitem->tsSource;
+
+                    for (auto &it : elementMap) {
+                        auto pelem = it.second.lock();
+                        OpcUa_StatusCode stat;
+                        const UaVariant &memberValue = genericValue.value(it.first, &stat);
+                        if (stat != OpcUa_Good) {
+                            // Absent optional field: The incoming type is Null.
+                            // Pass a fake value with correct data type so that
+                            // later writing will not fail with type mismatch.
+                            const UaStructureField &field = definition.child(it.first);
+                            OpcUa_Variant fakeValue;
+                            OpcUa_Variant_Clear(&fakeValue);
+                            fakeValue.Datatype = field.valueType();
+                            fakeValue.ArrayType = field.valueRank() != 0;
+                            if (debug())
+                                std::cerr << pitem->recConnector->getRecordName()
+                                          << " element " << pelem->name
+                                          << " absent optional " << variantTypeString((OpcUa_BuiltInType)fakeValue.Datatype)
+                                          << (fakeValue.ArrayType ? " array" : " scalar")
+                                          << std::endl;
+                            pelem->setIncomingData(fakeValue, ProcessReason::readFailure);
+                        } else {
+                            pelem->setIncomingData(memberValue, reason);
                         }
                     }
                 }
