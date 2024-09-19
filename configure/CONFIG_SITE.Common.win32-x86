@@ -24,10 +24,16 @@ endif
 
 ifdef OPEN62541
 
+ifeq ($(OPEN62541_USE_CRYPTO),YES)
+  USR_LDFLAGS_WIN32 += $(OPENSSL:%=/LIBPATH:%/lib)
+  USR_INCLUDES_WIN32 += $(OPENSSL:%=-I%/include)
+  USR_SYS_LIBS_WIN32 += libcrypto
+endif
+
 ifeq ($(OPEN62541_USE_XMLPARSER),YES)
-  USR_LDFLAGS_WIN32 += /LIBPATH:$(LIBXML2)/lib /LIBPATH:$(ICONV)/lib
-  USR_INCLUDES_WIN32 += -I$(LIBXML2)/include/libxml2 -I$(ICONV)/include
-  USR_SYS_LIBS_WIN32 += libxml2 libiconv
+  USR_LDFLAGS_WIN32 += $(LIBXML2:%=/LIBPATH:%/out32dll)
+  USR_INCLUDES_WIN32 += $(LIBXML2:%=-I%/include)
+  USR_SYS_LIBS_WIN32 += libxml2
 endif
 
 endif
