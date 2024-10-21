@@ -96,6 +96,10 @@ void processCallback (epicsCallback *pcallback, const ProcessReason reason)
     prec = static_cast<dbCommon *>(pUsr);
     if (!prec || !prec->dpvt) return;
 
+    // Do not process writeComplete on struct elements that have not been written
+    if (reason == writeComplete && !prec->pact)
+        return;
+
     RecordConnector *pvt = static_cast<RecordConnector*>(prec->dpvt);
     dbScanLock(prec);
     ProcessReason oldreason = pvt->reason;
