@@ -403,7 +403,8 @@ DataElementOpen62541::updateDataInStruct(void* container,
             char* memberData = static_cast<char*>(container) + pelem->offset;
             const UA_Variant& elementData = pelem->getOutgoingData();
             const UA_DataType* memberType = pelem->memberType;
-            assert(memberType == elementData.type);
+            assert(memberType == elementData.type ||
+                (typeKindOf(memberType) == UA_DATATYPEKIND_ENUM && typeKindOf(elementData.type) == UA_DATATYPEKIND_INT32));
             if (!pelem->isArray && !pelem->isOptional) {
                 // mandatory scalar: shallow copy
                 UA_clear(memberData, memberType);
